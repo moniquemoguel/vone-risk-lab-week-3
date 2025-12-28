@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Risk Lab: The VONE Decision Room (Week 3)</title>
+  <style>
+    :root{
+      --vone-blue:#4797cd;
+      --bg:#0b1220;
+      --card:rgba(255,255,255,0.08);
+      --text:rgba(255,255,255,0.92);
+      --muted:rgba(255,255,255,0.72);
+      --border:rgba(255,255,255,0.14);
+      --good:rgba(0,255,140,0.16);
+      --warn:rgba(255,193,7,0.18);
+      --bad:rgba(255,82,82,0.16);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background: radial-gradient(1200px 600px at 15% 10%, rgba(71,151,205,0.25), transparent 60%),
+                  radial-gradient(1200px 600px at 80% 20%, rgba(255,255,255,0.10), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      padding:18px;
+    }
+    .app{
+      width:min(1000px,100%);
+      border:1px solid var(--border);
+      border-radius:18px;
+      overflow:hidden;
+      background:rgba(0,0,0,0.28);
+      backdrop-filter: blur(8px);
+      box-shadow:0 18px 50px rgba(0,0,0,0.35);
+    }
+    header{
+      padding:16px 18px;
+      border-bottom:1px solid var(--border);
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{display:flex;flex-direction:column;gap:2px}
+    .brand h1{margin:0;font-size:16px}
+    .brand p{margin:0;font-size:12px;color:var(--muted)}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;border:1px solid var(--border);
+      color:var(--muted);font-size:12px;user-select:none;white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--vone-blue);box-shadow:0 0 16px rgba(71,151,205,0.9)}
+    main{padding:16px 18px 18px}
+    .grid{display:grid;grid-template-columns:1.35fr 0.65fr;gap:14px}
+    @media(max-width:930px){.grid{grid-template-columns:1fr}}
+    .card{border:1px solid var(--border);border-radius:16px;background:var(--card);padding:14px}
+    .scene-title{margin:0 0 6px;font-size:18px}
+    .scene-text{margin:0 0 12px;line-height:1.45;color:var(--muted);font-size:14px;white-space:pre-wrap}
+    .choices{display:grid;gap:10px}
+    button.choice{
+      width:100%;text-align:left;padding:12px;border-radius:14px;
+      border:1px solid var(--border);background:rgba(0,0,0,0.22);
+      color:var(--text);cursor:pointer;
+      transition:border-color .12s ease, transform .04s ease;
+      font-size:14px;line-height:1.25;
+    }
+    button.choice:hover{border-color:rgba(71,151,205,0.55)}
+    button.choice:active{transform:translateY(1px)}
+    button.choice[disabled]{opacity:.65;cursor:not-allowed}
+    .feedback{
+      margin-top:12px;padding:12px;border-radius:14px;border:1px solid var(--border);
+      background:rgba(0,0,0,0.20);font-size:13px;line-height:1.35;white-space:pre-wrap;
+      display:none;
+    }
+    .feedback.good{background:var(--good);color:rgba(255,255,255,0.92)}
+    .feedback.warn{background:var(--warn);color:rgba(255,255,255,0.92)}
+    .feedback.bad{background:var(--bad);color:rgba(255,255,255,0.92)}
+    .footer-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;display:none}
+    .action{
+      border:1px solid var(--border);background:rgba(0,0,0,0.22);color:var(--text);
+      padding:10px 12px;border-radius:14px;cursor:pointer;font-size:13px;
+    }
+    .action.primary{background:rgba(71,151,205,0.24);border-color:rgba(71,151,205,0.55)}
+    .small{font-size:12px;color:var(--muted)}
+    .meter{display:grid;gap:10px}
+    .meter h3{margin:0 0 6px;font-size:13px;color:rgba(255,255,255,0.86)}
+    .bar{height:10px;border-radius:999px;border:1px solid var(--border);background:rgba(0,0,0,0.18);overflow:hidden}
+    .fill{height:100%;background:var(--vone-blue);width:50%}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .stat{border:1px solid var(--border);border-radius:14px;background:rgba(0,0,0,0.18);padding:10px}
+    .stat p{margin:0;color:var(--muted);font-size:12px}
+    .stat strong{display:block;font-size:16px;color:var(--text);margin-top:4px}
+    .table{
+      margin-top:12px;border:1px solid var(--border);border-radius:14px;overflow:hidden;
+      background:rgba(0,0,0,0.18);display:none;
+    }
+    .row{
+      display:grid;grid-template-columns:1.2fr .7fr .7fr .8fr .8fr;
+      gap:8px;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.10);
+      font-size:12px;color:rgba(255,255,255,0.88);
+    }
+    .row.head{background:rgba(71,151,205,0.14);font-weight:600;color:rgba(255,255,255,0.92)}
+    .row:last-child{border-bottom:none}
+    .tag{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.18)}
+    .codebox{
+      margin-top:10px;display:grid;gap:8px;border:1px dashed rgba(255,255,255,0.30);
+      border-radius:14px;padding:12px;background:rgba(0,0,0,0.22);display:none;
+    }
+    .code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:16px;letter-spacing:.4px}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Risk Lab: The VONE Decision Room</h1>
+        <p>Week 3 Simulation · Risk = impact × likelihood · Controls reduce (not erase)</p>
+      </div>
+      <div class="pill"><span class="dot"></span><span id="progressText">Scene 1 of 7</span></div>
+    </header>
+
+    <main>
+      <div class="grid">
+        <section class="card">
+          <h2 class="scene-title" id="sceneTitle"></h2>
+          <p class="scene-text" id="sceneText"></p>
+
+          <div class="choices" id="choices"></div>
+          <div class="feedback" id="feedback"></div>
+
+          <div class="footer-actions" id="footerActions">
+            <button class="action primary" id="nextBtn">Continue</button>
+            <button class="action" id="restartBtn">Restart</button>
+          </div>
+
+          <div class="codebox" id="endBlock">
+            <div class="feedback good" id="endSummary" style="display:block;"></div>
+            <div class="small">Completion Code (paste into VONE):</div>
+            <div class="code" id="completionCode"></div>
+            <div class="footer-actions" style="display:flex;">
+              <button class="action primary" id="copyBtn">Copy Code</button>
+              <button class="action" id="restartBtn2">Play Again</button>
+            </div>
+            <div class="small">You just practiced qualitative risk thinking the way real organizations do: structured, consistent, and decision-ready.</div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="meter">
+            <div>
+              <h3>Risk Clarity</h3>
+              <div class="bar"><div class="fill" id="clarityFill"></div></div>
+            </div>
+            <div>
+              <h3>Prioritization Skill</h3>
+              <div class="bar"><div class="fill" id="prioFill"></div></div>
+            </div>
+            <div>
+              <h3>Control Wisdom</h3>
+              <div class="bar"><div class="fill" id="controlFill"></div></div>
+            </div>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <p>Current Rank</p>
+              <strong id="rankText">—</strong>
+            </div>
+            <div class="stat">
+              <p>Score</p>
+              <strong id="scoreText">0</strong>
+            </div>
+          </div>
+
+          <p class="small" style="margin-top:12px;">
+            You’re in the Decision Room. Your goal isn’t “zero risk.” It’s smart choices with clear reasoning.
+          </p>
+
+          <div class="table" id="riskTable">
+            <div class="row head">
+              <div>Risk</div><div>Impact</div><div>Like</div><div>Priority</div><div>Control</div>
+            </div>
+            <div class="row" id="r1"></div>
+            <div class="row" id="r2"></div>
+            <div class="row" id="r3"></div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Week 3 themes: define risk, qualitative impact/likelihood, prioritization, controls reduce risk, structured principles.
+    const scenes = [
+      {
+        title: "Scene 1: The Door Opens",
+        text: "Welcome to the VONE Decision Room.\nA leader says: “We need zero risk.”\n\nYour job: correct that mindset without killing momentum.\nWhat do you say?",
+        choices: [
+          { label:"“Risk can’t be erased. We manage it by understanding impact and likelihood, then choosing controls.”",
+            delta:{clarity:+3, prio:+1, control:+2}, fb:"RIGHT FRAME.\nRisk management is responsible decision-making, not magical elimination."},
+          { label:"“We can eliminate risk if we buy enough tools.”",
+            delta:{clarity:-2, prio:0, control:-1}, fb:"TOOL FANTASY.\nControls help, but risk never fully disappears."},
+          { label:"“Let’s ignore risk and move fast.”",
+            delta:{clarity:-3, prio:-1, control:-2}, fb:"CHAOS MOVE.\nIgnoring risk doesn’t remove it. It just removes your ability to steer it."}
+        ]
+      },
+      {
+        title: "Scene 2: Risk Card #1",
+        text: "Risk Card appears:\nA staff member shares a learner spreadsheet through an unapproved chat.\n\nRate it using qualitative thinking: impact and likelihood.",
+        choices: [
+          { label:"Impact: High · Likelihood: Medium (sensitive data + habits make repeats likely).",
+            add:{name:"Data shared in chat", impact:"High", like:"Med"}, delta:{clarity:+2, prio:+2, control:+1}, fb:"GOOD READ.\nQualitative thinking uses evidence and context, not exact math."},
+          { label:"Impact: Low · Likelihood: Low (it’s probably fine).",
+            add:{name:"Data shared in chat", impact:"Low", like:"Low"}, delta:{clarity:-2, prio:-2, control:0}, fb:"MINIMIZED.\nSensitive learner data can trigger trust and compliance issues."},
+          { label:"Impact: Medium · Likelihood: High (common behavior, moderate harm).",
+            add:{name:"Data shared in chat", impact:"Med", like:"High"}, delta:{clarity:+1, prio:+1, control:+1}, fb:"DECENT.\nYou recognized likelihood. Consider impact beyond money: trust and safety matter."}
+        ]
+      },
+      {
+        title: "Scene 3: Controls Aren’t Magic",
+        text: "Pick a control for Risk Card #1.\nReminder: controls reduce risk, they don’t erase it.",
+        choices: [
+          { label:"Create a simple rule: no sensitive data in chat + provide an approved sharing method + short training.",
+            setControl:"Simple rule + approved sharing + training",
+            delta:{clarity:+1, prio:+1, control:+3}, fb:"BEST FIT.\nYou reduced likelihood by changing behavior and making the safe path easy."},
+          { label:"Ban chat tools entirely.",
+            setControl:"Ban chat tools",
+            delta:{clarity:0, prio:0, control:0}, fb:"HEAVY-HANDED.\nSometimes valid, but often creates workarounds. Controls should be proportional."},
+          { label:"Write a long policy and assume people follow it.",
+            setControl:"Long policy only",
+            delta:{clarity:0, prio:-1, control:-1}, fb:"WEAK CONTROL.\nPolicy without enablement or enforcement tends to fail."}
+        ]
+      },
+      {
+        title: "Scene 4: Risk Card #2",
+        text: "Risk Card appears:\nA vendor wants admin access to upload course materials.\n\nRate impact and likelihood.",
+        choices: [
+          { label:"Impact: High · Likelihood: Medium (admin access is powerful; vendors make mistakes too).",
+            add:{name:"Vendor admin access", impact:"High", like:"Med"}, delta:{clarity:+2, prio:+2, control:+1}, fb:"RIGHT PRIORITY.\nAdmin access increases blast radius. That’s impact."},
+          { label:"Impact: Medium · Likelihood: Low (they seem reputable).",
+            add:{name:"Vendor admin access", impact:"Med", like:"Low"}, delta:{clarity:0, prio:-1, control:0}, fb:"A LITTLE SOFT.\nReputation helps, but controls shouldn’t depend on vibes."},
+          { label:"Impact: Low · Likelihood: High (it’s annoying, but not serious).",
+            add:{name:"Vendor admin access", impact:"Low", like:"High"}, delta:{clarity:-2, prio:-2, control:0}, fb:"MISREAD.\nAdmin access can change systems and data. That’s serious impact."}
+        ]
+      },
+      {
+        title: "Scene 5: Prioritize Like a Pro",
+        text: "You have two risks now. Leadership asks what to address first.\n\nHow do you prioritize?",
+        choices: [
+          { label:"Prioritize the highest impact items, then consider likelihood and ease of mitigation.",
+            delta:{clarity:+1, prio:+3, control:+1}, fb:"YES.\nThis is why structured approaches exist: consistent decisions."},
+          { label:"Prioritize what’s easiest to fix first to feel productive.",
+            delta:{clarity:0, prio:-1, control:0}, fb:"TEMPTING.\nQuick wins are fine, but don’t ignore high-impact risks."},
+          { label:"Prioritize the most recent complaint from the loudest person.",
+            delta:{clarity:-1, prio:-3, control:0}, fb:"CHAOS.\nRisk management shouldn’t be noise-driven."}
+        ]
+      },
+      {
+        title: "Scene 6: Risk Card #3",
+        text: "Risk Card appears:\nNo one is sure who approves changes to learner grading rules.\nDecisions happen in DMs.\n\nRate it.",
+        choices: [
+          { label:"Impact: Medium · Likelihood: High (confusion is constant; errors are likely).",
+            add:{name:"Unclear decision authority", impact:"Med", like:"High"}, delta:{clarity:+2, prio:+2, control:+2}, fb:"STRONG.\nGovernance gaps create repeated risk."},
+          { label:"Impact: Low · Likelihood: Medium (not a security issue).",
+            add:{name:"Unclear decision authority", impact:"Low", like:"Med"}, delta:{clarity:-1, prio:-1, control:0}, fb:"TOO NARROW.\nGovernance is part of risk. Wrong changes can harm trust and integrity."},
+          { label:"Impact: High · Likelihood: Low (big harm but rare).",
+            add:{name:"Unclear decision authority", impact:"High", like:"Low"}, delta:{clarity:+1, prio:+1, control:+1}, fb:"NOT BAD.\nConsider how often confusion actually causes mistakes."}
+        ]
+      },
+      {
+        title: "Scene 7: The Principle Check",
+        text: "Final question: why do organizations use structured risk principles?\nPick the best answer.",
+        choices: [
+          { label:"To make decisions consistent, repeatable, and explainable across teams.",
+            delta:{clarity:+2, prio:+2, control:+1}, fb:"CORRECT.\nStructured risk thinking improves decision quality and accountability."},
+          { label:"To eliminate all risk permanently.",
+            delta:{clarity:-2, prio:0, control:-1}, fb:"NOPE.\nRisk management is control and tradeoffs, not perfection."},
+          { label:"To create paperwork for audits.",
+            delta:{clarity:0, prio:-1, control:0}, fb:"PARTIAL.\nDocumentation matters, but the point is better decisions, not paperwork."}
+        ]
+      }
+    ];
+
+    // State
+    let sceneIndex = 0;
+    let clarity = 50, prio = 50, control = 50;
+    let score = 0;
+    const register = []; // up to 3
+    let lastRiskIndex = -1;
+
+    // UI refs
+    const sceneTitleEl = document.getElementById("sceneTitle");
+    const sceneTextEl = document.getElementById("sceneText");
+    const choicesEl = document.getElementById("choices");
+    const feedbackEl = document.getElementById("feedback");
+    const footerActionsEl = document.getElementById("footerActions");
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const restartBtn2 = document.getElementById("restartBtn2");
+    const endBlock = document.getElementById("endBlock");
+    const endSummary = document.getElementById("endSummary");
+    const completionCodeEl = document.getElementById("completionCode");
+    const copyBtn = document.getElementById("copyBtn");
+
+    const clarityFill = document.getElementById("clarityFill");
+    const prioFill = document.getElementById("prioFill");
+    const controlFill = document.getElementById("controlFill");
+    const rankText = document.getElementById("rankText");
+    const scoreText = document.getElementById("scoreText");
+    const progressText = document.getElementById("progressText");
+
+    const riskTable = document.getElementById("riskTable");
+    const r1 = document.getElementById("r1");
+    const r2 = document.getElementById("r2");
+    const r3 = document.getElementById("r3");
+
+    function clamp(n){ return Math.max(0, Math.min(100, n)); }
+
+    function getPriority(impact, like){
+      const i = {Low:1, Med:2, High:3}[impact] ?? 2;
+      const l = {Low:1, Med:2, High:3}[like] ?? 2;
+      const v = i * l;
+      if (v >= 7) return "High";
+      if (v >= 4) return "Med";
+      return "Low";
+    }
+
+    function rank(){
+      const total = clarity + prio + control;
+      if (total >= 245) return "Risk Strategist";
+      if (total >= 215) return "Decision Architect";
+      if (total >= 185) return "Risk Translator";
+      return "Chaos Tamer (in training)";
+    }
+
+    function renderRegister(){
+      if (!register.length) { riskTable.style.display = "none"; return; }
+      riskTable.style.display = "block";
+      const rows = [r1, r2, r3];
+      rows.forEach((el, idx) => {
+        const item = register[idx];
+        if (!item) {
+          el.innerHTML = `<div class="small">—</div><div class="small">—</div><div class="small">—</div><div class="small">—</div><div class="small">—</div>`;
+          return;
+        }
+        el.innerHTML = `
+          <div><span class="tag">${item.name}</span></div>
+          <div>${item.impact}</div>
+          <div>${item.like}</div>
+          <div>${getPriority(item.impact, item.like)}</div>
+          <div>${item.control ?? "—"}</div>
+        `;
+      });
+    }
+
+    function updateUI(){
+      clarityFill.style.width = clarity + "%";
+      prioFill.style.width = prio + "%";
+      controlFill.style.width = control + "%";
+      scoreText.textContent = String(score);
+      rankText.textContent = rank();
+      progressText.textContent = endBlock.style.display === "block" ? "Complete" : `Scene ${sceneIndex + 1} of ${scenes.length}`;
+      renderRegister();
+    }
+
+    function showFeedback(text, type){
+      feedbackEl.textContent = text;
+      feedbackEl.className = "feedback " + type;
+      feedbackEl.style.display = "block";
+      footerActionsEl.style.display = "flex";
+    }
+
+    function renderScene(){
+      feedbackEl.style.display = "none";
+      footerActionsEl.style.display = "none";
+      endBlock.style.display = "none";
+
+      const s = scenes[sceneIndex];
+      sceneTitleEl.textContent = s.title;
+      sceneTextEl.textContent = s.text;
+
+      choicesEl.innerHTML = "";
+      s.choices.forEach((c) => {
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.type = "button";
+        btn.textContent = c.label;
+        btn.addEventListener("click", () => choose(c));
+        choicesEl.appendChild(btn);
+      });
+
+      updateUI();
+    }
+
+    function choose(c){
+      Array.from(choicesEl.querySelectorAll("button.choice")).forEach(b => b.disabled = true);
+
+      clarity = clamp(clarity + (c.delta.clarity * 6));
+      prio = clamp(prio + (c.delta.prio * 6));
+      control = clamp(control + (c.delta.control * 6));
+      score += (c.delta.clarity * 3) + (c.delta.prio * 3) + (c.delta.control * 3);
+
+      if (c.add) {
+        const item = { name: c.add.name, impact: c.add.impact, like: c.add.like, control: "—" };
+        if (register.length < 3) register.push(item);
+        else register[register.length - 1] = item;
+        lastRiskIndex = Math.min(register.length - 1, 2);
+      }
+      if (c.setControl && lastRiskIndex >= 0) {
+        register[lastRiskIndex].control = c.setControl;
+      }
+
+      let type = "warn";
+      const s = c.delta.clarity + c.delta.prio + c.delta.control;
+      if (s >= 6) type = "good";
+      if (s <= 2) type = "bad";
+
+      showFeedback(c.fb, type);
+      updateUI();
+    }
+
+    function endGame(){
+      choicesEl.innerHTML = "";
+      feedbackEl.style.display = "none";
+      footerActionsEl.style.display = "none";
+
+      endSummary.textContent =
+        `MISSION COMPLETE.\n\nRank: ${rank()}\nScore: ${score}\n\nWeek 3 takeaway:\nRisk is a decision concept (impact + likelihood). Controls reduce risk, and structured approaches keep decisions consistent.`;
+      endBlock.style.display = "block";
+
+      const random3 = Math.floor(Math.random() * 900) + 100;
+      completionCodeEl.textContent = `VONE-W3-${Math.max(0, score)}-${random3}`;
+      updateUI();
+    }
+
+    nextBtn.addEventListener("click", () => {
+      if (sceneIndex < scenes.length - 1) { sceneIndex++; renderScene(); }
+      else endGame();
+    });
+
+    restartBtn.addEventListener("click", () => window.location.reload());
+    restartBtn2.addEventListener("click", () => window.location.reload());
+
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(completionCodeEl.textContent);
+        copyBtn.textContent = "Copied!";
+        setTimeout(()=> copyBtn.textContent="Copy Code", 900);
+      } catch {
+        copyBtn.textContent = "Copy manually";
+        setTimeout(()=> copyBtn.textContent="Copy Code", 900);
+      }
+    });
+
+    renderScene();
+  </script>
+</body>
+</html>
